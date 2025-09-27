@@ -194,17 +194,28 @@ fn main() -> anyhow::Result<()> {
                             .state()
                             .with_context(|| format!("Failed to get drive {drive} state"))?;
                         log::debug!("Drive {drive} state: {state}");
-                        let temp = if state.can_probe_temp(*supports_probing_sleeping) {
-                            let temp = prober
+                        if state.can_probe_temp(*supports_probing_sleeping) {
+                            match prober
                                 .probe_temp()
-                                .with_context(|| format!("Failed to get drive {drive} temp"))?;
-                            log::debug!("Drive {drive}: {temp}°C");
-                            Some(temp)
+                                .with_context(|| format!("Failed to get drive {drive} temp"))
+                            {
+                                Ok(temp) => {
+                                    log::debug!("Drive {drive}: {temp}°C");
+
+                                    Ok(Some(temp))
+                                }
+                                Err(e) => {
+                                    log::warn!(
+                                        "Failed to get maximum drive temperature for {drive}: {e:?}"
+                                    );
+
+                                    Ok(None)
+                                }
+                            }
                         } else {
                             log::debug!("Drive {drive} in state {state} can not be probed");
-                            None
-                        };
-                        Ok(temp)
+                            Ok(None)
+                        }
                     })
                     .collect::<anyhow::Result<Vec<_>>>()
                     .context("Failed to get maximum drive temperature")?
