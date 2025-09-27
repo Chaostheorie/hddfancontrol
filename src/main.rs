@@ -6,9 +6,8 @@ use std::{
     ops::Range,
     path::PathBuf,
     sync::{
-        Arc,
         atomic::{AtomicBool, Ordering},
-        mpsc,
+        mpsc, Arc,
     },
     time::{Duration, Instant},
 };
@@ -157,7 +156,7 @@ fn setup_fans(
     Ok(fans)
 }
 
-/// Probe temperature for each drive, returning `None` for sleeping drives
+/// Probe temperature for each drive, returning `None` for sleeping drives or failed probes
 fn probe_drive_temps(
     drive_probers: &mut [DriveProber],
     drives: &[Drive],
@@ -171,11 +170,19 @@ fn probe_drive_temps(
                 .with_context(|| format!("Failed to get drive {drive} state"))?;
             log::debug!("Drive {drive} state: {state}");
             let temp = if state.can_probe_temp(*supports_probing_sleeping) {
-                let temp = prober
+                match prober
                     .probe_temp()
-                    .with_context(|| format!("Failed to get drive {drive} temp"))?;
-                log::debug!("Drive {drive}: {temp}°C");
-                Some(temp)
+                    .with_context(|| format!("Failed to get drive {drive} temp"))
+                {
+                    Ok(temp) => {
+                        log::debug!("Drive {drive}: {temp}°C");
+                        Some(temp)
+                    }
+                    Err(e) => {
+                        log::warn!("Failed to get drive {drive} temperature: {e:?}");
+                        None
+                    }
+                }
             } else {
                 log::debug!("Drive {drive} in state {state} can not be probed");
                 None

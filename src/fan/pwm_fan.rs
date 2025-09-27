@@ -1,7 +1,7 @@
 //! PWM fan control
 
 use std::{
-    cmp::{Ordering, max},
+    cmp::{max, Ordering},
     fmt,
     path::{Path, PathBuf},
     thread::sleep,
@@ -278,7 +278,7 @@ mod tests {
     use std::io::Write as _;
 
     use super::*;
-    use crate::pwm::tests::{FakePwm, assert_file_content};
+    use crate::pwm::tests::{assert_file_content, FakePwm};
 
     #[test]
     fn set_speed() {

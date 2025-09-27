@@ -9,7 +9,7 @@ use std::{
 };
 
 use chrono::{DateTime, NaiveDate, Utc};
-use flate2::{Compression, bufread, write::GzEncoder};
+use flate2::{bufread, write::GzEncoder, Compression};
 use itertools::Itertools as _;
 use rev_lines::RawRevLines;
 
